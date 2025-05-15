@@ -10,3 +10,11 @@ GeoliConf:
   min_version:
     - 3: 1.0.0
     - 5: 1.0.0
+
+User:
+  - name: "Tom"
+    age: 18
+    sex: "male"
+  - name: "Jerry"
+    age: 20
+    sex: "female"

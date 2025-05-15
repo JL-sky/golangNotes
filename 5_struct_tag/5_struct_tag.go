@@ -43,6 +43,7 @@ type Config struct {
 	Mysql     Mysql     `yaml:"mysql"`
 	Redis     Redis     `yaml:"redis"`
 	GeoliConf GeoliConf `yaml:"GeoliConf"`
+	Users     []User    `yaml:"User"`
 }
 
 type Mysql struct {
@@ -57,6 +58,12 @@ type Redis struct {
 
 type GeoliConf struct {
 	MinVersion []map[string]string `yaml:"min_version"`
+}
+
+type User struct {
+	Name string `yaml:"name"`
+	Age  int    `yaml:"age"`
+	Sex  string `yaml:"sex"`
 }
 
 func ParseYaml() {
@@ -76,13 +83,17 @@ func ParseYaml() {
 
 	// 输出解析结果
 	fmt.Println("=== 解析后的结构体 ===")
-	fmt.Printf("Mysql: %+v\n", config.Mysql)
-	fmt.Printf("Redis: %+v\n", config.Redis)
+	fmt.Printf("Mysql:\n\tUrl=%s\n\tPort=%d\n", config.Mysql.Url, config.Mysql.Port)
+	fmt.Printf("Redis:\n\tHost=%s\n\tPort=%d\n", config.Redis.Host, config.Redis.Port)
 	fmt.Println("GeoliConf.min_version:")
 	for i, version := range config.GeoliConf.MinVersion {
 		for k, v := range version {
 			fmt.Printf("  第 %d 项：Key=%s，Value=%s\n", i+1, k, v)
 		}
+	}
+	fmt.Println("Users:")
+	for i, user := range config.Users {
+		fmt.Printf("  第 %d 项：Name=%s，Age=%d，Sex=%s\n", i+1, user.Name, user.Age, user.Sex)
 	}
 }
 func main() {
