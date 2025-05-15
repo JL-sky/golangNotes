@@ -74,19 +74,13 @@ func ChannelTestRange() {
 }
 
 func ChannelWrite(ch, quit chan int) {
-	x, y := 1, 1 // 斐波那契数列初始值
-	/*
-	   select语句：
-	   case ch <- x：将当前斐波那契数x发送到ch通道。若通道已满则阻塞，直到有消费者接收数据。
-	   case <-quit：从quit通道接收数据（忽略具体值），若收到则终止循环并退出函数。
-	*/
+	x, y := 1, 1
+
 	for {
 		select {
-		// 当ch可写时，生成下一个斐波那契数
+		//ch通道可写时，执行该case
 		case ch <- x:
-			x, y = y, x+y // 计算下一对斐波那契数
-
-		// 当quit可读时（收到终止信号），退出函数
+			x, y = y, x+y
 		case <-quit:
 			fmt.Println("quit")
 			return
@@ -97,13 +91,10 @@ func ChannelWrite(ch, quit chan int) {
 func ChannelTestSelect() {
 	ch := make(chan int)
 	quit := make(chan int)
-	// 消费者从ch通道接收 6 个数值后，向quit通道发送0作为终止信号。
 	go func() {
-		// 消费前6个斐波那契数
 		for i := 0; i < 6; i++ {
 			fmt.Println(<-ch)
 		}
-		// 发送终止信号
 		quit <- 0
 	}()
 	ChannelWrite(ch, quit)
