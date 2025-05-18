@@ -51,6 +51,10 @@ func (path Path) TranslateBy(anther Point, add bool) {
 	}
 }
 
+func init() {
+	fmt.Println("init hello")
+}
+
 func test() {
 	points := Path{
 		{1, 2},
