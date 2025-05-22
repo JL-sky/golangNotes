@@ -1,0 +1,18 @@
+syntax = "proto3";
+package example;
+option go_package="github.com/jl-sky/pb";
+import "google/protobuf/any.proto";
+
+message Person {
+  string name = 1;
+  int32 age = 2;
+}
+
+message Book {
+  string title = 1;
+  string author = 2;
+}
+
+message Container {
+  google.protobuf.Any content = 1;
+}
