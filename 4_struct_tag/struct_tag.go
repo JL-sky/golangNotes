@@ -16,27 +16,45 @@ type Movie struct {
 }
 
 func ConvertJson() {
+	// 创建 Movie 实例
 	movie := Movie{
 		Title:  "喜剧之王",
 		Year:   2020,
 		Price:  100,
 		Actors: []string{"周星驰", "莫文蔚"},
 	}
-	// 将movie转换为json
-	jsonStr, err := json.Marshal(movie)
-	if err != nil {
-		fmt.Println("json marshal failed, err:", err)
-		return
-	}
-	fmt.Printf("jsonStr=%s\n", jsonStr)
 
-	myMoive := Movie{}
-	err = json.Unmarshal(jsonStr, &myMoive)
+	// 1. 将 movie 转换为 JSON 并保存到文件
+	jsonData, err := json.MarshalIndent(movie, "", "  ")
 	if err != nil {
-		fmt.Println("json unmarshal failed, err:", err)
+		fmt.Println("JSON 序列化失败:", err)
 		return
 	}
-	fmt.Printf("myMoive:%v\n", myMoive)
+
+	// 写入文件
+	err = os.WriteFile("movie.json", jsonData, 0644)
+	if err != nil {
+		fmt.Println("写入文件失败:", err)
+		return
+	}
+	fmt.Println("成功保存到 movie.json")
+
+	// 2. 从文件读取 JSON 并解析，fileData是一个 []byte 类型的切片
+	fileData, err := os.ReadFile("movie.json")
+	if err != nil {
+		fmt.Println("读取文件失败:", err)
+		return
+	}
+
+	var myMovie Movie
+	err = json.Unmarshal(fileData, &myMovie)
+	if err != nil {
+		fmt.Println("JSON 反序列化失败:", err)
+		return
+	}
+
+	// 打印解析结果
+	fmt.Printf("从文件读取的 Movie:\n%+v\n", myMovie)
 }
 
 type Config struct {
@@ -97,6 +115,6 @@ func ParseYaml() {
 	}
 }
 func main() {
-	// ConvertJson()
-	ParseYaml()
+	ConvertJson()
+	// ParseYaml()
 }
