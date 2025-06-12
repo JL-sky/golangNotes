@@ -3,56 +3,55 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 func main() {
-	// Create a new MCP server
-	s := server.NewMCPServer(
-		"Calculator Demo",
-		"1.0.0",
-		server.WithToolCapabilities(false),
-		server.WithRecovery(),
-	)
+	// 创建一个新的MCPServer实例
+	s := server.NewMCPServer("CalculatorServer", "1.0.0")
 
-	// Add a calculator tool
+	// 添加工具
 	calculatorTool := mcp.NewTool("calculate",
-		mcp.WithDescription("Perform basic arithmetic operations"),
+		mcp.WithDescription("执行基本的算术运算"),
 		mcp.WithString("operation",
 			mcp.Required(),
-			mcp.Description("The operation to perform (add, subtract, multiply, divide)"),
-			mcp.Enum("add", "subtract", "multiply", "divide"),
+			mcp.Description("要执行的算术运算类型"),
+			mcp.Enum("multiply", "divide"),
 		),
 		mcp.WithNumber("x",
 			mcp.Required(),
-			mcp.Description("First number"),
+			mcp.Description("第一个数字"),
 		),
 		mcp.WithNumber("y",
 			mcp.Required(),
-			mcp.Description("Second number"),
+			mcp.Description("第二个数字"),
 		),
 	)
 
-	// Add the calculator handler
+	// 将工具添加到服务器
 	s.AddTool(calculatorTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Using helper functions for type-safe argument access
+		// 获取请求中的operation参数
 		op, err := request.RequireString("operation")
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
+		// 获取请求中的x参数
 		x, err := request.RequireFloat("x")
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
+		// 获取请求中的y参数
 		y, err := request.RequireFloat("y")
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
+		// 根据operation参数执行相应的算术运算
 		var result float64
 		switch op {
 		case "add":
@@ -68,11 +67,17 @@ func main() {
 			result = x / y
 		}
 
+		// 返回结果
 		return mcp.NewToolResultText(fmt.Sprintf("%.2f", result)), nil
 	})
 
-	// Start the server
+	//sseServer := server.NewSSEServer(s, server.WithBaseURL("http://localhost:8082"))
+	//log.Printf("SSE server listening on :8082")
+	//if err := sseServer.Start(":8082"); err != nil {
+	//	log.Fatalf("Server error: %v", err)
+	//}
+	// 启动基于 stdio 的服务器
 	if err := server.ServeStdio(s); err != nil {
-		fmt.Printf("Server error: %v\n", err)
+		log.Printf("Server error: %v\n", err)
 	}
 }
