@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func funcName(a interface{}) string {
 	value, ok := a.(string)
@@ -12,6 +14,15 @@ func funcName(a interface{}) string {
 	return value
 }
 
+func AnyTest(arg any) {
+	switch value := arg.(type) {
+	case int:
+		fmt.Println("The value is an int >>> ", value)
+	case string:
+		fmt.Println("The value is a string >>> ", value)
+	}
+}
+
 func InterfaceTest() {
 	// var a int = 10
 	var a string = "hello"
@@ -19,5 +30,7 @@ func InterfaceTest() {
 }
 
 func main() {
-	InterfaceTest()
+	// InterfaceTest()
+	AnyTest(10)
+	AnyTest("hello")
 }
