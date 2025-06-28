@@ -21,7 +21,7 @@ func main() {
 	a, _ := strconv.ParseFloat(os.Args[1], 64)
 	b, _ := strconv.ParseFloat(os.Args[2], 64)
 	// 这里的路径是上面编译的mcp-server可执行文件
-	mcpClient, err := client.NewStdioMCPClient("/home/pcl/projects/test/go/golangNotes/16_mcp/mcpserver/mcpserver", []string{})
+	mcpClient, err := client.NewStdioMCPClient("/home/cheersj/pro/test/golangNotes/16_mcp/mcpserver/mcpserver", []string{})
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +49,7 @@ func main() {
 			Method: "tools/call",
 		},
 	}
-	toolRequest.Params.Name = "calculate"
+	toolRequest.Params.Name = "calculator"
 	toolRequest.Params.Arguments = map[string]any{
 		"operation": "multiply",
 		"x":         a,
