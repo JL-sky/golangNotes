@@ -29,7 +29,7 @@ func main() {
 	}
 
 	// 查询数据
-	video, err := mysql.GetVideoByID(db, 1) // 假设 ID=1 的记录存在
+	video, err := mysql.GetVideoByID(db, newVideo.ID)
 	if err != nil {
 		fmt.Println("查询失败:", err)
 	} else {

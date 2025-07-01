@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jl-sky/grom/golangNotes/datatbase/consts"
 	"github.com/jl-sky/grom/golangNotes/datatbase/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -33,7 +34,8 @@ func Conn() *gorm.DB {
 	sqlDB.SetConnMaxLifetime(time.Hour) // 连接可复用的最大时间
 
 	// 3. 自动迁移（创建表）
-	err = db.AutoMigrate(&models.Video{})
+	err = db.Table(consts.TableName).AutoMigrate(&models.Video{})
+	// err = db.AutoMigrate(&models.Video{})
 	if err != nil {
 		fmt.Println("自动迁移失败：", err)
 		return nil
