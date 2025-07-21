@@ -9,7 +9,6 @@ import (
 
 	"github.com/jl-sky/grom/golangNotes/datatbase/config"
 	"github.com/jl-sky/grom/golangNotes/datatbase/models"
-	"github.com/jl-sky/grom/golangNotes/datatbase/reader"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -66,7 +65,7 @@ func (o *OutputImpl) Changelog(ctx context.Context, req *models.ChangelogAdminRe
 	return o.handleUpdate(ctx, preRecord, curRecord, req.ChangeUser)
 }
 
-func (o *OutputImpl) getRowData(rowData string) (*models.TOutput, error) {
+func (o *OutputImpl) getRowData(rowData string) (*models.HistoryOutput, error) {
 	var raw map[string]interface{}
 	if err := json.Unmarshal([]byte(rowData), &raw); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal row data: %w", err)
@@ -80,7 +79,7 @@ func (o *OutputImpl) getRowData(rowData string) (*models.TOutput, error) {
 		raw["c_config"] = string(configBytes)
 	}
 
-	var result models.TOutput
+	var result models.HistoryOutput
 	if err := mapToStruct(raw, &result); err != nil {
 		return nil, fmt.Errorf("failed to convert map to struct: %w", err)
 	}
@@ -96,7 +95,7 @@ func mapToStruct(m map[string]interface{}, s interface{}) error {
 	return json.Unmarshal(data, s)
 }
 
-func (o *OutputImpl) QueryHistoryData(ctx context.Context, curData *models.TOutput) (*models.TOutput, error) {
+func (o *OutputImpl) QueryHistoryData(ctx context.Context, curData *models.HistoryOutput) (*models.HistoryOutput, error) {
 	if curData == nil {
 		return nil, fmt.Errorf("current data cannot be nil")
 	}
@@ -130,35 +129,10 @@ func (o *OutputImpl) QueryHistoryData(ctx context.Context, curData *models.TOutp
 	}
 
 	// 将HistoryOutput转换为TOutput
-	return convertHistoryToOutput(&history), nil
+	return &history, nil
 }
 
-func convertHistoryToOutput(history *models.HistoryOutput) *models.TOutput {
-	if history == nil {
-		return nil
-	}
-	return &models.TOutput{
-		CModifier:      history.CModifier,
-		CStrategyID:    history.CStrategyID,
-		CFamilyID:      history.CFamilyID,
-		CParentID:      history.CParentID,
-		CDataType:      history.CDataType,
-		CDataTypeValue: history.CDataTypeValue,
-		CStatus:        history.CStatus,
-		CMtime:         history.CMtime,
-		CPageUUID:      history.CPageUUID,
-		CCreator:       history.CCreator,
-		CVersion:       history.CVersion,
-		CVersionType:   history.CVersionType,
-		CPageClass:     history.CPageClass,
-		CRelationID:    history.CRelationID,
-		CIsPatch:       history.CIsPatch,
-		CType:          history.CType,
-		CConfig:        history.CConfig,
-	}
-}
-
-func (o *OutputImpl) handleFirstChange(ctx context.Context, curRecord *models.TOutput) error {
+func (o *OutputImpl) handleFirstChange(ctx context.Context, curRecord *models.HistoryOutput) error {
 	historyTable := GetTableNameWithHistory(config.TOutput)
 	newHistory := models.HistoryOutput{
 		CModifier:      curRecord.CModifier,
@@ -178,6 +152,7 @@ func (o *OutputImpl) handleFirstChange(ctx context.Context, curRecord *models.TO
 		CIsPatch:       curRecord.CIsPatch,
 		CType:          curRecord.CType,
 		CConfig:        curRecord.CConfig,
+		Changelogs:     "",
 		RecordStatus:   "current",
 	}
 	if err := o.db.WithContext(ctx).
@@ -190,7 +165,7 @@ func (o *OutputImpl) handleFirstChange(ctx context.Context, curRecord *models.TO
 	return nil
 }
 
-func (o *OutputImpl) handleUpdate(ctx context.Context, preRecord, curRecord *models.TOutput, changeUser string) error {
+func (o *OutputImpl) handleUpdate(ctx context.Context, preRecord, curRecord *models.HistoryOutput, changeUser string) error {
 	log.Debugf("Previous record found, handling update")
 	// 字段校验
 	if preRecord.CFamilyID != curRecord.CFamilyID || preRecord.CDataTypeValue != curRecord.CDataTypeValue {
@@ -257,74 +232,43 @@ func (o *OutputImpl) handleUpdate(ctx context.Context, preRecord, curRecord *mod
 }
 
 // RecordChangeLog 记录变更日志并发送通知
-func (o *OutputImpl) RecordChangeLog(ctx context.Context, preRecord, curRecord *models.TOutput, changeUser, change string) error {
-	// 1. 创建变更日志记录
-	if err := o.createChangeLog(ctx, curRecord, changeUser, change); err != nil {
+func (o *OutputImpl) RecordChangeLog(ctx context.Context, preRecord, curRecord *models.HistoryOutput, changeUser, change string) error {
+	if err := o.createChangeLog(ctx, curRecord, change); err != nil {
 		return err
 	}
-
-	// 2. 发送变更通知
-	if err := o.notifyChange(ctx, curRecord); err != nil {
-		// 通知失败不影响主流程，但需要记录日志
-		log.Printf("变更通知发送失败(不影响主流程): %v", err)
-	}
-
 	return nil
 }
 
 // createChangeLog 创建变更日志记录
-func (o *OutputImpl) createChangeLog(ctx context.Context, record *models.TOutput, changeUser, change string) error {
-	changeLog := models.TChangeLogs{
-		TableName:      config.TOutput,
+func (o *OutputImpl) createChangeLog(ctx context.Context, record *models.HistoryOutput, change string) error {
+	tableName := GetTableNameWithHistory(config.TOutput)
+
+	changeLog := models.HistoryOutput{
+		CStrategyID:    record.CStrategyID,
 		CFamilyID:      record.CFamilyID,
+		CParentID:      record.CParentID,
+		CDataType:      record.CDataType,
 		CDataTypeValue: record.CDataTypeValue,
-		ChangeUser:     changeUser,
-		ChangeLog:      change,
-		CheckTime:      time.Now().Unix(),
+		CStatus:        record.CStatus,
+		CMtime:         time.Now().Format("2006-01-02 15:04:05"),
+		CPageUUID:      record.CPageUUID,
+		CCreator:       record.CCreator,
+		CVersion:       record.CVersion,
+		CVersionType:   record.CVersionType,
+		CPageClass:     record.CPageClass,
+		CRelationID:    record.CRelationID,
+		CIsPatch:       record.CIsPatch,
+		CType:          record.CType,
+		CConfig:        record.CConfig,
+
+		Changelogs:   change,
+		RecordStatus: "current",
 	}
 
-	if err := o.db.WithContext(ctx).Create(&changeLog).Error; err != nil {
+	if err := o.db.WithContext(ctx).Table(tableName).Create(&changeLog).Error; err != nil {
 		return fmt.Errorf("创建变更日志失败: %w", err)
 	}
 	return nil
-}
-
-// notifyChange 发送变更通知
-func (o *OutputImpl) notifyChange(ctx context.Context, record *models.TOutput) error {
-	// 1. 准备通知数据
-	notification, err := o.prepareNotification(record)
-	if err != nil {
-		return fmt.Errorf("准备通知数据失败: %w", err)
-	}
-
-	// 2. 发送通知
-	readerClient := reader.NewReaderImpl()
-	if err := readerClient.HandleNotification(ctx, notification); err != nil {
-		return fmt.Errorf("通知处理失败: %w", err)
-	}
-
-	return nil
-}
-
-// prepareNotification 准备通知数据
-func (o *OutputImpl) prepareNotification(record *models.TOutput) (*reader.ChangLogHeaderInfo, error) {
-	keyValue := map[string]interface{}{
-		"c_family_id":       record.CFamilyID,
-		"c_data_type_value": record.CDataTypeValue,
-	}
-
-	keyValueData, err := json.Marshal(keyValue)
-	if err != nil {
-		return nil, fmt.Errorf("JSON序列化失败: %w", err)
-	}
-
-	return &reader.ChangLogHeaderInfo{
-		TableName:     config.TOutput,
-		TableKey:      fmt.Sprintf("%s:%s", record.CFamilyID, record.CDataTypeValue),
-		TableKeyValue: string(keyValueData),
-		ChangeUser:    record.CModifier,
-		CheckTime:     time.Now().Unix(),
-	}, nil
 }
 
 func HasTable(db *gorm.DB, tableName string) bool {

@@ -8,22 +8,9 @@ import (
 	"time"
 
 	"github.com/jl-sky/grom/golangNotes/datatbase/config"
-	"github.com/jl-sky/grom/golangNotes/datatbase/models"
 	"github.com/r3labs/diff"
-	"gorm.io/gorm"
+	log "github.com/sirupsen/logrus"
 )
-
-// 初始化变更记录系统
-func InitChangeLogSystem(db *gorm.DB) error {
-	if HasTable(db, GetTableNameWithHistory(config.TChangeLogs)) {
-		return nil
-	}
-	err := db.AutoMigrate(&models.TChangeLogs{})
-	if err != nil {
-		return fmt.Errorf("output init error")
-	}
-	return nil
-}
 
 // CompareWithDiff 比较两个结构体的差异
 func CompareWithDiff(a, b interface{}) (string, error) {
@@ -43,7 +30,10 @@ func CompareWithDiff(a, b interface{}) (string, error) {
 
 		// 获取字段名，处理嵌套路径如"User.Name"
 		fieldName := strings.Join(change.Path, ".")
-
+		if _, ok := config.FilterFields[fieldName]; ok {
+			log.Debugf("过滤字段: %s", fieldName)
+			continue
+		}
 		// 跳过时间类型的比较
 		fromType := reflect.TypeOf(change.From)
 		if fromType == reflect.TypeOf(time.Time{}) {
@@ -51,18 +41,11 @@ func CompareWithDiff(a, b interface{}) (string, error) {
 		}
 
 		// 处理变更前的值
-		if change.From != nil {
-			beforeChanges[fieldName] = change.From
-		} else {
-			beforeChanges[fieldName] = nil
-		}
+		log.Debugf("变更字段: %s", fieldName)
+		beforeChanges[fieldName] = change.From
 
 		// 处理变更后的值
-		if change.To != nil {
-			afterChanges[fieldName] = change.To
-		} else {
-			afterChanges[fieldName] = nil
-		}
+		afterChanges[fieldName] = change.To
 	}
 
 	// 如果有变更，生成最终结果
@@ -76,7 +59,7 @@ func CompareWithDiff(a, b interface{}) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("JSON序列化失败: %v", err)
 		}
-
+		log.Debugf(string(jsonData))
 		return string(jsonData), nil
 	}
 

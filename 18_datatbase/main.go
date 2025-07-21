@@ -40,7 +40,6 @@ func GetChangelogAdmin(tableName string) (ChangeLogAdmin, error) {
 	if err != nil {
 		return nil, err
 	}
-	changelog.InitChangeLogSystem(db)
 	switch tableName {
 	case config.TOutput:
 		outputImpl, err := changelog.NewOutput(db)
@@ -52,6 +51,6 @@ func GetChangelogAdmin(tableName string) (ChangeLogAdmin, error) {
 
 func main() {
 	loger.InitLogger()
-	// changelogAdminTest()
-	TestConcurrentUpdates()
+	changelogAdminTest()
+	// TestConcurrentUpdates()
 }
