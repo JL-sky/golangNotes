@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type ChangelogAdminReq struct {
 	TableName  string
 	ChangeUser string
@@ -28,6 +30,7 @@ type HistoryOutput struct {
 	CType          string `gorm:"column:c_type;type:varchar(50);default:'default';comment:配置类型" json:"c_type"`
 	CConfig        string `gorm:"column:c_config;type:longtext;comment:配置内容(JSON字符串)" json:"c_config"`
 
-	Changelogs   string `gorm:"column:changelogs;type:longtext;comment:变更日志" json:"changelogs"`
-	RecordStatus string `gorm:"column:record_status;type:enum('current','historical');default:'current'"`
+	Changelogs   string    `gorm:"column:changelogs;type:longtext;comment:变更日志" json:"changelogs"`
+	RecordStatus string    `gorm:"column:record_status;type:enum('current','historical');default:'current'"`
+	CreatedAt    time.Time `gorm:"column:created_at;type:datetime;default:CURRENT_TIMESTAMP" json:"created_at"`
 }

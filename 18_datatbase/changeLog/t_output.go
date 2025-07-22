@@ -154,6 +154,7 @@ func (o *OutputImpl) handleFirstChange(ctx context.Context, curRecord *models.Hi
 		CConfig:        curRecord.CConfig,
 		Changelogs:     "",
 		RecordStatus:   "current",
+		CreatedAt:      time.Now(),
 	}
 	if err := o.db.WithContext(ctx).
 		Table(historyTable).
@@ -219,6 +220,7 @@ func (o *OutputImpl) handleUpdate(ctx context.Context, preRecord, curRecord *mod
 			CType:          curRecord.CType,
 			CConfig:        curRecord.CConfig,
 			RecordStatus:   "current",
+			CreatedAt:      time.Now(),
 		}
 		if err := tx.WithContext(ctx).
 			Table(historyTable).
@@ -263,6 +265,7 @@ func (o *OutputImpl) createChangeLog(ctx context.Context, record *models.History
 
 		Changelogs:   change,
 		RecordStatus: "current",
+		CreatedAt:    time.Now(),
 	}
 
 	if err := o.db.WithContext(ctx).Table(tableName).Create(&changeLog).Error; err != nil {

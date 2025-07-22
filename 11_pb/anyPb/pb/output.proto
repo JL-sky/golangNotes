@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package example;
+option go_package="github.com/jl-sky/pb";
+import "google/protobuf/any.proto";
+
+message TOutput {
+  string family_id = 1;          // 对应 FamilyId
+  int32 is_patch = 2;            // 对应 IsPatch
+  string strategy_id = 3;        // 对应 StrategyId
+  string data_type_value = 4;    // 对应 DataTypeValue
+  string version = 5;            // 对应 Version
+  string type = 6;               // 对应 Type
+  string parent_id = 7;          // 对应 ParentId
+  string config = 8;             // 对应 Config
+  string data_type = 9;          // 对应 DataType
+  string page_class = 10;        // 对应 PageClass
+  string page_uuid = 11;         // 对应 PageUuid
+  string modify_time = 12;       // 对应 ModifyTime
+}
