@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -124,10 +125,34 @@ func ChannelTestSelect() {
 	ChannelWrite(ch, quit)
 }
 
+func test() {
+	ch := make(chan int, 3)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for c := range ch {
+				fmt.Println(c)
+			}
+		}()
+	}
+
+	for i := 0; i < 3; i++ {
+		ch <- i
+		fmt.Println("send i=", i)
+		fmt.Println("len(ch)=", len(ch), "cap(ch)=", cap(ch))
+	}
+	close(ch)
+	wg.Wait()
+}
+
 func main() {
+	test()
 	// ChannelTestNoCache()
 	// ChannelTestCache(3, 3)
-	ChannelTestCache(3, 10)
+	// ChannelTestCache(3, 10)
 	// ChannelTestClose()
 	// ChannelTestRange()
 	// ChannelTestSelect()
